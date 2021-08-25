@@ -1,6 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 const port = 8000;
 const app = express();
 
@@ -13,24 +16,25 @@ app.listen(port, () => {
   console.log(`server is listening on port:${port}`);
 });
 
+const tempPassword = "1200";
+bcrypt
+  .hash(tempPassword, saltRounds)
+  .then((hash) => console.log("type is: " + typeof hash));
+
 // CREATE
 app.post("/users", (req, res) => {
-  User.create(
-    {
-      ...req.body.newData,
-    },
-    (err, data) => {
-      if (err) res.json({ success: false, message: err });
-      else if (!data) res.json({ success: false, message: "Not Found" });
-      else
-        res.json({
-          success: true,
-          data: data,
-        });
-    }
-  );
+  bcrypt.hash(req.body.password, saltRounds).then((hash) => {
+    User.create(
+      {
+        ...req.body.newData,
+        password: hash,
+      },
+      (err, data) => {
+        sendResponse(res, err, data);
+      }
+    );
+  });
 });
-
 app
   .route("/users/:id")
   // READ
